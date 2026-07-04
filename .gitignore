@@ -5,3 +5,7 @@ sdk/*.pom
 apk/
 work/
 *.so
+
+# Python cache
+__pycache__/
+*.pyc
