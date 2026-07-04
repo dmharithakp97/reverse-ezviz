@@ -22,6 +22,11 @@ defenses that *are* present (ECDH+SRTP streams, no trust-all TLS, no native back
 symbols, the cloud API auth model, and a **proven, self-testing** encrypted-media decryptor
 (`tools/scripts/ezviz_media.py`) plus a threat model / attack tree.
 
+**[CRACK_ANALYSIS.md](CRACK_ANALYSIS.md)** — exploitability proof for H-2: an offline verify-code recovery
+PoC (`tools/scripts/ezviz_verifycode_crack.py`) that recovers the code + decrypts on synthetic data,
+measured CPU throughput, GPU/hashcat (mode 2600) scaling showing the 6-char space falls in milliseconds,
+and vendor/user fixes. Offline-only, self-tested on synthetic data.
+
 ## Layout
 ```
 REPORT.md              Findings write-up (start here)
