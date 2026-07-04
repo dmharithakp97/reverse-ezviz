@@ -12,6 +12,11 @@ streaming model, SADP/HCNetSDK device control, the provisioning attack surface, 
 (brute-forceable encrypted-media scheme, static-IV/ECB local caches, and the reversed `libencryptprotect`
 white-box).
 
+**[SECURITY_FINDINGS.md](SECURITY_FINDINGS.md)** — severity-rated dangerous network/process/permission
+findings with `file:line` evidence: the token-bearing WebView that accepts MITM certs on a user tap,
+secrets logged to logcat, `System.load()` of a caller-supplied path, exec/permission surface, and the
+defenses that *are* present (ECDH+SRTP streams, no trust-all TLS, no native backdoor).
+
 ## Layout
 ```
 REPORT.md              Findings write-up (start here)
