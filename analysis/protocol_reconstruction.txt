@@ -1,0 +1,46 @@
+# EZVIZ native protocol reconstruction (from libstunClient.so / libsadp.so symbols + disasm)
+
+== Custom STUN / NAT-traversal protocol (ezviz_stunclient::CStunProtocol) ==
+Not RFC 5389 STUN. Own TLV framing with CRC32 integrity.
+Framing functions (symbolized, libstunClient.so is NOT stripped):
+  CStunProtocol::ComposeMsgHeader(uint,uint,uint,uint,char*)   @0x6d310
+  CStunProtocol::ParseMsgHeader(char*,int,tag_StunProtocolHeader&)
+  CStunProtocol::WriteAttribute(u8 type, string val, char* buf, int&)
+  CStunProtocol::ReadAttribute(char*,int,u8&,int&,int&)
+  CStunProtocol::ComposeMsgBody / ParseMsgBody(uint, tag_StunProtocolAttribute&,...)
+  CStunProtocol::CheckSum_CRC32(const u8*, int)      -> integrity trailer
+  CStunProtocol::GenerateUuid(uint)                  -> transaction id
+  BuildNatReq(_NATREQ*, char*, int&) / PaserNatRsp(const char*, int, _NATRSP*)
+  Stun_GetNATType / Stun_GetNATType_New / Stun_GetNATIP / Stun_GetIpv6NatType
+
+32-byte header (recovered from ComposeMsgHeader disasm; args byte-swapped via `rev` = big-endian):
+  off 0  : magic   9E 53 35 E9            (4 bytes, fixed)
+  off 4  : version 01 00 00 00            (4 bytes)
+  off 8  : BE(arg3)                       (4 bytes)
+  off 12 : 00 00 00 00
+  off 16 : BE(arg1)  (msg type)           (4 bytes)
+  off 20 : 00 00 00 00
+  off 24 : BE(arg2)                       (4 bytes)
+  off 28 : BE(arg4)  (body length)        (4 bytes)
+Body = TLV attributes (u8 type + len + value), CRC32 checksum appended.
+
+== SADP LAN discovery/activation (libsadp.so, com.hikvision.sadp.Sadp) ==
+Transport: UDP multicast (CIOMulticast) — Hikvision SADP group 239.255.255.250:37020.
+Protocol module: MulticastProtocol_V31.cpp (binary), probes: CIPProbe/CPortProbe/CProtocolProbe.
+Device "online" announce fields:
+  SADPVersion, szIPv4Address, szSerialNOEx, szMAC, bySupport[0..7]/bySupport1/bySupport2 (capability bitmaps),
+  szIPv6Address, dwCmdPort, wHttpPort
+Exposed control operations over the SAME LAN protocol (JNI Java_..._SADP_*):
+  SADP_SendInquiry / SADP_InquirySpecificSubnet(AllDevice)   -> enumerate devices
+  SADP_ActivateDevice                                        -> set password on a factory-inactive device
+  SADP_ResetPasswd / _V40 / _V50 / SADP_ResetDefaultPasswd   -> password reset (salt/GUID/security-code flows)
+  SADP_ModifyDeviceNetParam / SADP_SetDeviceConfig           -> change IP/net config
+=> Any host on the L2 segment can enumerate cameras and, if a device is in the
+   factory "inactive" state, activate it (own it). Classic Hikvision LAN surface.
+
+== Streaming session key (libezstreamclient.so) ==
+  EZVIZECDHCrypter::ezviz_ecdh_generateMasterKey / ezviz_ecdh_srvGenerateMasterKey
+  ECDHCryption_GenerateMasterKey / ECDHCryption_SrvGenerateMasterKey ("set master key/salt")
+  -> ECDH -> master key/salt -> SRTP (srtp_stream_init_all_master_keys) for A/V.
+  Token request query flags: &ecdh=1 &devecdh=<..> &udpecdh=<..>
+  Connection order (InitParam.iStreamInhibit bitmask): LAN-direct -> P2P (STUN+CAS, CP2PV2/V21/V3) -> VTM relay.

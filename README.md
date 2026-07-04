@@ -17,6 +17,11 @@ findings with `file:line` evidence: the token-bearing WebView that accepts MITM 
 secrets logged to logcat, `System.load()` of a caller-supplied path, exec/permission surface, and the
 defenses that *are* present (ECDH+SRTP streams, no trust-all TLS, no native backdoor).
 
+**[DEEP_DIVE.md](DEEP_DIVE.md)** — ethical-hacker deep dive: reconstructed the custom STUN wire format
+(magic `9E5335E9`, 32-byte header) and the SADP LAN activation/enumeration surface from unstripped native
+symbols, the cloud API auth model, and a **proven, self-testing** encrypted-media decryptor
+(`tools/scripts/ezviz_media.py`) plus a threat model / attack tree.
+
 ## Layout
 ```
 REPORT.md              Findings write-up (start here)
