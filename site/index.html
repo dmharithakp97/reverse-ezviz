@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EZVIZ SDK Teardown · Security Intelligence</title>
+</head>
+<body>
+<style>
+  :root{
+    --ground:#0a0f1e; --surface:#111829; --raised:#16203a; --border:#26314f;
+    --text:#e8edf9; --muted:#8a97b8; --faint:#5b6b8f;
+    --accent:#ffb43f; --accent-ink:#1a1204; --data:#43cbe0;
+    --crit:#ff5064; --high:#ff8a42; --med:#f5c542; --low:#54d6a0; --info:#6ea8fe; --good:#4ade80;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --maxw:1180px; --r:14px;
+    --shadow:0 10px 40px -18px rgba(0,0,0,.7);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --ground:#eef1f7; --surface:#ffffff; --raised:#f6f8fc; --border:#d3dbea;
+      --text:#0b1020; --muted:#54617f; --faint:#8792a8;
+      --accent:#b9780a; --accent-ink:#fff; --data:#0d7f96;
+      --crit:#d32438; --high:#c25a15; --med:#9a7100; --low:#128a5a; --info:#295fd0; --good:#1a8a4a;
+      --shadow:0 10px 34px -20px rgba(20,30,60,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0a0f1e; --surface:#111829; --raised:#16203a; --border:#26314f;
+    --text:#e8edf9; --muted:#8a97b8; --faint:#5b6b8f;
+    --accent:#ffb43f; --accent-ink:#1a1204; --data:#43cbe0;
+    --crit:#ff5064; --high:#ff8a42; --med:#f5c542; --low:#54d6a0; --info:#6ea8fe; --good:#4ade80;
+    --shadow:0 10px 40px -18px rgba(0,0,0,.7);
+  }
+  :root[data-theme="light"]{
+    --ground:#eef1f7; --surface:#ffffff; --raised:#f6f8fc; --border:#d3dbea;
+    --text:#0b1020; --muted:#54617f; --faint:#8792a8;
+    --accent:#b9780a; --accent-ink:#fff; --data:#0d7f96;
+    --crit:#d32438; --high:#c25a15; --med:#9a7100; --low:#128a5a; --info:#295fd0; --good:#1a8a4a;
+    --shadow:0 10px 34px -20px rgba(20,30,60,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--text);font-family:var(--sans);
+    line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  a{color:var(--data);text-decoration:none}
+  h1,h2,h3{text-wrap:balance;margin:0}
+  .mono{font-family:var(--mono)}
+  .tnum{font-variant-numeric:tabular-nums}
+  .eyebrow{font-family:var(--mono);text-transform:uppercase;letter-spacing:.18em;
+    font-size:.7rem;color:var(--accent);font-weight:600}
+
+  /* top bar */
+  header.bar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--ground) 86%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+  .bar .wrap{display:flex;align-items:center;gap:18px;height:58px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-weight:700;letter-spacing:.02em}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 26%,transparent)}
+  nav.sect{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+  nav.sect a{font-family:var(--mono);font-size:.76rem;color:var(--muted);padding:6px 10px;border-radius:8px;
+    text-transform:uppercase;letter-spacing:.06em}
+  nav.sect a:hover{color:var(--text);background:var(--raised)}
+  .ttoggle{font-family:var(--mono);font-size:.72rem;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .ttoggle:hover{color:var(--text);border-color:var(--accent)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+  /* hero */
+  .hero{padding:54px 0 30px;position:relative}
+  .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(680px 300px at 82% -10%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 70%),
+      radial-gradient(520px 260px at 8% 0%,color-mix(in srgb,var(--data) 10%,transparent),transparent 70%);}
+  .hero .wrap{position:relative}
+  .hero h1{font-family:var(--mono);font-size:clamp(1.9rem,4.6vw,3.1rem);font-weight:700;
+    letter-spacing:-.01em;line-height:1.05;margin:14px 0 10px}
+  .hero h1 .amp{color:var(--accent)}
+  .hero p.lede{max-width:64ch;color:var(--muted);font-size:1.03rem}
+  .target{display:inline-flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:16px;
+    font-family:var(--mono);font-size:.82rem;color:var(--muted);
+    border:1px solid var(--border);border-radius:10px;padding:8px 14px;background:var(--surface)}
+  .target b{color:var(--text);font-weight:600}
+  .target .sep{color:var(--faint)}
+  .disc{margin-top:16px;font-size:.8rem;color:var(--faint);max-width:70ch}
+
+  /* stat strip */
+  .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:26px 0 4px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 14px}
+  .stat .n{font-family:var(--mono);font-size:1.6rem;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+  .stat .l{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+  @media(max-width:820px){.stats{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:460px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+  section.blk{padding:38px 0;border-top:1px solid var(--border);margin-top:26px}
+  .h-lead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+  .h-lead h2{font-family:var(--mono);font-size:1.35rem;letter-spacing:.01em}
+  .h-lead .sub{color:var(--muted);font-size:.9rem}
+
+  /* findings board */
+  .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .find{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:16px 16px 14px;position:relative;overflow:hidden;transition:transform .12s,border-color .12s}
+  .find:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--sevc) 55%,var(--border))}
+  .find::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--sevc)}
+  .find .top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .pill{font-family:var(--mono);font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    padding:3px 8px;border-radius:999px;color:#0a0f1e;background:var(--sevc)}
+  :root[data-theme="light"] .pill,html:not([data-theme]) .pill{color:#fff}
+  @media (prefers-color-scheme: light){html:not([data-theme]) .pill{color:#fff}}
+  .find .id{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-left:auto}
+  .find h3{font-size:1.02rem;margin:2px 0 6px;line-height:1.25}
+  .find p{margin:0;color:var(--muted);font-size:.86rem}
+  .find .where{font-family:var(--mono);font-size:.72rem;color:var(--data);margin-top:8px;word-break:break-word}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:840px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+  .card h3{font-family:var(--mono);font-size:.96rem;margin-bottom:10px;letter-spacing:.02em}
+  .card p{color:var(--muted);font-size:.88rem;margin:.4em 0}
+
+  /* interactive lab */
+  .lab{background:linear-gradient(180deg,var(--raised),var(--surface));border:1px solid var(--border);
+    border-radius:var(--r);padding:20px}
+  .lab .row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:760px){.lab .row{grid-template-columns:1fr}}
+  label.f{display:block;font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--muted);margin:12px 0 5px}
+  input[type=text],select{width:100%;background:var(--ground);border:1px solid var(--border);color:var(--text);
+    font-family:var(--mono);font-size:.9rem;padding:9px 11px;border-radius:9px}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .btn{font-family:var(--mono);font-size:.8rem;font-weight:600;background:var(--accent);color:var(--accent-ink);
+    border:none;border-radius:9px;padding:9px 16px;cursor:pointer;letter-spacing:.03em}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+  .readout{font-family:var(--mono);background:var(--ground);border:1px solid var(--border);border-radius:10px;
+    padding:12px 14px;margin-top:12px;font-size:.85rem;line-height:1.7;overflow-x:auto}
+  .readout b{color:var(--accent)}
+  .readout .tag{color:var(--data);word-break:break-all}
+  .kv{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--border);padding:5px 0}
+  .kv:last-child{border-bottom:none}
+  .kv span:first-child{color:var(--muted)}
+  .kv span:last-child{font-family:var(--mono);color:var(--text)}
+  progress{width:100%;height:8px;accent-color:var(--accent)}
+  .hit{color:var(--good);font-weight:700}
+  .miss{color:var(--high)}
+
+  /* native chart */
+  .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+  canvas{width:100%;display:block}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:.76rem;color:var(--muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:baseline}
+
+  /* endpoints */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+  .chip{font-family:var(--mono);font-size:.72rem;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);border-radius:999px;padding:5px 11px;cursor:pointer;text-transform:uppercase;letter-spacing:.04em}
+  .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .eplist{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:6px}
+  .ep{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.8rem;
+    background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 11px}
+  .ep .m{font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:5px;background:var(--raised);color:var(--data)}
+  .ep .m.post{color:var(--accent)}
+  .ep code{color:var(--text);word-break:break-all}
+  .ep .cat{margin-left:auto;font-size:.64rem;color:var(--faint);text-transform:uppercase}
+
+  /* protocol bytes */
+  .bytes{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .byte{font-family:var(--mono);font-size:.74rem;border:1px solid var(--border);border-radius:6px;
+    padding:6px 7px;min-width:34px;text-align:center;background:var(--ground)}
+  .byte.magic{border-color:var(--accent);color:var(--accent)}
+  .byte.field{border-color:var(--data);color:var(--data)}
+  .byte small{display:block;color:var(--faint);font-size:.56rem;margin-top:2px}
+
+  /* attack tree */
+  .tree{font-family:var(--mono);font-size:.84rem;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r);padding:18px 18px;overflow-x:auto;line-height:1.9}
+  .tree .goal{color:var(--accent);font-weight:700}
+  .tree .node{color:var(--text)}
+  .tree .fix{color:var(--good)}
+  .tree .sev{color:var(--muted)}
+
+  footer{border-top:1px solid var(--border);margin-top:30px;padding:26px 0 50px;color:var(--faint);font-size:.8rem}
+  .stack{display:flex;flex-direction:column;gap:6px}
+  .layer{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:10px 14px}
+  .layer .ln{font-family:var(--mono);font-size:.7rem;color:var(--accent);width:120px;flex:none;text-transform:uppercase;letter-spacing:.05em}
+  .layer .ld{font-size:.85rem;color:var(--muted)}
+  .layer .ld b{color:var(--text);font-weight:600}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="bar">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span>EZVIZ&nbsp;SDK&nbsp;·&nbsp;TEARDOWN</div>
+    <nav class="sect">
+      <a href="#findings">Findings</a>
+      <a href="#lab">H-2 Lab</a>
+      <a href="#native">Native</a>
+      <a href="#api">API</a>
+      <a href="#proto">Protocols</a>
+      <a href="#tree">Attack&nbsp;Tree</a>
+    </nav>
+    <button class="ttoggle" id="themeBtn" aria-label="Toggle theme">◐ theme</button>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Static reverse engineering · security intelligence</div>
+    <h1>EZVIZ Android SDK <span class="amp">/</span> under the hood</h1>
+    <p class="lede">A full teardown of the vendor-published EZVIZ camera SDK — its native stack, cloud API,
+      P2P/LAN protocols, and cryptography — reduced to what a defender actually needs to see. Every number
+      below traces to a binary that was decompiled or disassembled, not to a guess.</p>
+    <div class="target mono">
+      <span>artifact <b>io.github.ezviz-open:ezviz-sdk</b></span><span class="sep">│</span>
+      <span>ver <b>5.27.3</b></span><span class="sep">│</span>
+      <span>code <b>5273</b></span><span class="sep">│</span>
+      <span>pkg <b>com.videogo.ezvizsdk</b></span>
+    </div>
+    <p class="disc">Analysis of first-party, Apache-2.0-packaged artifacts for interoperability and defensive
+      understanding. No live systems, accounts, or third-party data were involved; the crypto lab runs
+      entirely in your browser on values you type.</p>
+
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section class="blk" id="findings">
+    <div class="h-lead"><h2>Findings board</h2><span class="sub">ranked by real-world exploitability — click a card's file reference to see where it lives</span></div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <section class="blk" id="lab">
+    <div class="h-lead"><h2>H-2 lab · encrypted-media weakness</h2><span class="sub">the verification code IS the key, and every file carries an offline oracle — try it</span></div>
+    <div class="grid2">
+      <div class="lab">
+        <div class="eyebrow" style="color:var(--data)">Oracle demo</div>
+        <p style="color:var(--muted);font-size:.86rem;margin:.4em 0 0">Each encrypted blob stores
+          <span class="mono">MD5(MD5(verifyCode))</span>. That tag lets an attacker confirm a guessed code
+          with two hashes — no device, no server. Type a code, then let the browser brute-force it back.</p>
+        <label class="f" for="code">device verification code (A–Z)</label>
+        <input type="text" id="code" value="ABCDEF" maxlength="6" spellcheck="false" autocomplete="off">
+        <div class="readout" id="tagOut"></div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn" id="crackBtn">▶ brute-force it</button>
+          <button class="btn ghost" id="stopBtn">stop</button>
+        </div>
+        <progress id="prog" value="0" max="1" style="margin-top:12px;display:none"></progress>
+        <div class="readout" id="crackOut" style="display:none"></div>
+        <p style="color:var(--faint);font-size:.72rem;margin-top:10px">Live demo brute-forces up to 4 chars
+          (26⁴ ≈ 457k) to stay responsive. Real codes are 6 chars — see the calculator for how fast that
+          falls on a GPU.</p>
+      </div>
+
+      <div class="lab">
+        <div class="eyebrow" style="color:var(--data)">Keyspace calculator</div>
+        <p style="color:var(--muted);font-size:.86rem;margin:.4em 0 0">Effective key entropy is the code,
+          not 128 bits. Pick the alphabet and length and see how long the whole space takes.</p>
+        <label class="f" for="charset">code alphabet</label>
+        <select id="charset">
+          <option value="26">A–Z (26) · typical label code</option>
+          <option value="36">A–Z 0–9 (36)</option>
+          <option value="62">A–Z a–z 0–9 (62)</option>
+          <option value="10">0–9 (10)</option>
+        </select>
+        <label class="f" for="len">length: <span id="lenv" class="mono" style="color:var(--accent)">6</span></label>
+        <input type="range" id="len" min="4" max="8" value="6">
+        <label class="f" for="rate">cracking rig</label>
+        <select id="rate">
+          <option value="4190000">this 4-core CPU · measured 4.19M H/s</option>
+          <option value="8000000000" selected>mid-range GPU · ~8G H/s</option>
+          <option value="40000000000">high-end GPU · hashcat 2600 ~40G H/s</option>
+        </select>
+        <div class="readout" id="calcOut"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="blk" id="native">
+    <div class="h-lead"><h2>Native surface</h2><span class="sub">35 shared objects per ABI · 840 JNI entry points · the P2P + Hikvision + crypto stack</span></div>
+    <div class="chart-wrap">
+      <canvas id="libChart" height="420" aria-label="Bar chart of native library sizes by role"></canvas>
+      <div class="legend" id="legend"></div>
+    </div>
+  </section>
+
+  <section class="blk" id="api">
+    <div class="h-lead"><h2>Cloud API enumeration</h2><span class="sub" id="apisub">85 hardcoded routes · token/appKey as form params · no cert pinning</span></div>
+    <div class="filters" id="filters"></div>
+    <div class="eplist" id="eplist"></div>
+  </section>
+
+  <section class="blk" id="proto">
+    <div class="h-lead"><h2>Protocols reconstructed</h2><span class="sub">from unstripped native symbols + disassembly</span></div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Custom STUN / NAT header</h3>
+        <p><code class="mono">ezviz_stunclient::CStunProtocol</code> — not RFC 5389. 32-byte big-endian
+          header (recovered from <code class="mono">ComposeMsgHeader</code>), TLV body, CRC32 trailer.</p>
+        <div class="bytes" id="stunBytes"></div>
+      </div>
+      <div class="card">
+        <h3>SADP LAN surface</h3>
+        <p>Hikvision multicast <b class="mono">239.255.255.250:37020</b>. The same protocol that discovers
+          cameras also controls them:</p>
+        <div class="kv"><span>Enumerate devices</span><span>SADP_SendInquiry</span></div>
+        <div class="kv"><span>Own a factory-inactive unit</span><span style="color:var(--high)">SADP_ActivateDevice</span></div>
+        <div class="kv"><span>Password reset flows</span><span style="color:var(--high)">SADP_ResetPasswd_V40/V50</span></div>
+        <div class="kv"><span>Rewrite network config</span><span style="color:var(--high)">SADP_ModifyDeviceNetParam</span></div>
+        <p style="margin-top:10px;font-size:.8rem">Anyone on the L2 segment can inventory and potentially
+          activate cameras. Mitigate: VLAN-segment, block multicast 37020, activate before deployment.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>KeyProtect white-box · <span class="mono" style="color:var(--med)">obfuscation, not crypto</span></h3>
+      <p><code class="mono">libencryptprotect.so</code> (9.5 KB, no cipher — memcpy/sprintf/base64 only) builds a
+        hardcoded constant on the stack. Recovered value, whose printable bytes spell the vendor's home city:</p>
+      <div class="readout"><span class="tag">486a68a361bf6eb567cd7afe68ca6fde75494b365c</span> &nbsp;→&nbsp; ascii ≈ <b>H·h·a·n·g·z·h·o·u</b> · Hangzhou</div>
+    </div>
+  </section>
+
+  <section class="blk" id="tree">
+    <div class="h-lead"><h2>Attack tree</h2><span class="sub">goal → path → prerequisite → fix</span></div>
+    <div class="tree" id="treeBox"></div>
+  </section>
+
+  <section class="blk" id="arch">
+    <div class="h-lead"><h2>Architecture</h2><span class="sub">the layers behind the app</span></div>
+    <div class="stack" id="stack"></div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <div>EZVIZ SDK teardown · generated from static analysis of <span class="mono">ezviz-sdk 5.27.3</span>.
+      Companion to REPORT.md · SECURITY_FINDINGS.md · DEEP_DIVE.md · CRACK_ANALYSIS.md.</div>
+    <div style="margin-top:8px">Defensive / interoperability research. The in-browser lab computes on values
+      you enter and never contacts any network.</div>
+  </div>
+</footer>
+
+<script>
+/* ---------- data ---------- */
+const STATS=[["35","native libs / ABI"],["840","JNI exports"],["94","cloud routes"],
+  ["654","SDK classes"],["3","crypto stacks"],["6+","rated findings"]];
+
+const FINDINGS=[
+  {id:"H-1",sev:"crit",cat:"WebView",t:"Token WebView accepts MITM certs on a tap",
+   d:"onReceivedSslError shows a “continue?” dialog that calls handler.proceed(); the same WebView POSTs the access token and exposes a deviceOperate JS bridge with no host allow-list.",w:"EzvizWebViewActivity.java:~340"},
+  {id:"H-2",sev:"crit",cat:"Crypto",t:"Encrypted media is offline brute-forceable",
+   d:"AES-CBC key = 6-char verify code padded to 16 bytes, hardcoded IV, and an embedded MD5(MD5(code)) oracle. ~2²⁸ keyspace, GPU-crackable in milliseconds.",w:"BaseAPI.java:~410"},
+  {id:"M-1",sev:"high",cat:"Logging",t:"Access token & verify code written to logcat",
+   d:"Full bearer token and the device verification code (which is the media key) are logged at debug/info level.",w:"BaseAPI.java:195 / :389"},
+  {id:"M-2",sev:"high",cat:"Loader",t:"System.load() of a caller-supplied path",
+   d:"initLib(app, appKey, loadLibraryAbsPath) passes an arbitrary absolute path to System.load — native code-exec footgun if the path is world-writable.",w:"NativeApi.java:41"},
+  {id:"M-3",sev:"med",cat:"Crypto",t:"“KeyProtect” is obfuscation, not cryptography",
+   d:"A 9.5 KB native lib with no cipher builds a hardcoded constant (spells “Hangzhou”). The protected key is fully recoverable offline.",w:"libencryptprotect.so"},
+  {id:"M-4",sev:"med",cat:"WebView",t:"JS injection via unsanitized URL groups",
+   d:"getRequestParam concatenates regex-captured URL parts into a javascript: string with no escaping.",w:"EzvizWebViewActivity.java:331"},
+  {id:"C-2",sev:"high",cat:"LAN/SADP",t:"SADP activation & recon over multicast",
+   d:"239.255.255.250:37020 exposes device enumeration, activation of factory-inactive units, password reset and net-param rewrite to anyone on the L2 segment.",w:"libsadp.so"},
+  {id:"L-1",sev:"low",cat:"Process",t:"ping arg-injection (no shell)",
+   d:"Runtime.exec(\"ping … \"+ip) tokenizes on whitespace; only ping-argument injection is possible, no shell metachars.",w:"NetUtil.java:175"},
+  {id:"L-2",sev:"low",cat:"Network",t:"Legacy cleartext endpoints",
+   d:"HTTP snapshot + third-party IP-geolocation calls; modern net-security config would block them by default.",w:"Constant.java:47"},
+  {id:"I-1",sev:"info",cat:"Privacy",t:"Persistent UUID device id",
+   d:"Random UUID cached to a file as a stable install identifier; notably NOT IMEI — privacy-friendlier than older builds.",w:"LocalInfo.java:432"},
+];
+const SEVMETA={crit:{c:"var(--crit)",l:"Critical"},high:{c:"var(--high)",l:"High"},
+  med:{c:"var(--med)",l:"Medium"},low:{c:"var(--low)",l:"Low"},info:{c:"var(--info)",l:"Info"}};
+const SEVORD={crit:0,high:1,med:2,low:3,info:4};
+
+const LIBS=[
+  ["libPlayCtrl.so",7477848,"media"],["libezstreamclient.so",7802432,"p2p"],
+  ["libstunClient.so",6873584,"p2p"],["libSystemTransform.so",6524504,"media"],
+  ["libcrypto.so",5266912,"crypto"],["libFormatConversion.so",3846416,"media"],
+  ["libezwatch.so",3665912,"util"],["libNPQos.so",2533976,"p2p"],
+  ["libEZAudioSDK.so",2316584,"media"],["libsadp.so",2234376,"sadp"],
+  ["libMNN.so",1980072,"ai"],["libHCGeneralCfgMgr.so",1705832,"hik"],
+  ["libhcnetsdk.so",1509240,"hik"],["libHCIndustry.so",1312616,"hik"],
+  ["libHCCoreDevCfg.so",1181568,"hik"],["libMNN_CL.so",1160088,"ai"],
+  ["libhpr.so",1132912,"util"],["libNPClient.so",1082848,"p2p"],
+  ["libsrt.so",1069000,"p2p"],["libHCAlarm.so",1050472,"hik"],
+  ["libHCDisplay.so",984936,"media"],["libssl.so",865376,"crypto"],
+  ["libysvqe_mobile.so",744896,"media"],["libHCPlayBack.so",788328,"hik"],
+  ["libHCPreview.so",722792,"hik"],["libHCVoiceTalk.so",657256,"hik"],
+  ["libezutils.so",646912,"util"],["libmbedcrypto.so",394272,"crypto"],
+  ["libencryptprotect.so",9536,"crypto"],
+];
+const GROUPS={p2p:["P2P / streaming","#43cbe0"],hik:["Hikvision NetSDK","#ffb43f"],
+  crypto:["Crypto","#ff5064"],media:["Media / codec","#6ea8fe"],
+  sadp:["SADP discovery","#54d6a0"],ai:["On-device AI (MNN)","#c58cff"],util:["Runtime / util","#8a97b8"]};
+
+const ENDPOINTS=`/api/user/token|auth
+/api/user/getUserInfo|auth
+/api/user/logout|auth
+/oauth/authorize|auth
+/oauth/code|auth
+/oauth/token/refreshToken|auth
+/oauth/success|auth
+/api/device/addDevice|device
+/api/device/deleteDevice|device
+/api/device/detail|device
+/api/device/list|device
+/api/device/searchDeviceInfo|device
+/api/device/updateDeviceName|device
+/api/device/updateDefence|device
+/api/device/upgrade|device
+/api/device/upgrade/status|device
+/api/device/getVersionInfo|device
+/api/device/encrypt/set|device
+/api/device/capturePicture|device
+/api/device/ptz/start|device
+/api/device/ptz/stop|device
+/api/device/setVideoLevel|device
+/api/device/format/disk|device
+/api/device/sharelist|device
+/api/device/sdk/detail|device
+/api/v3/open/cloud/v3/clouds/device/active|device
+/api/sdk/device/info|device
+/api/server/info|stream
+/api/sdk/p2p/dev/info/get|stream
+/api/sdk/p2p/user/info/get|stream
+/api/service/media/streaming/relay/server|stream
+/api/service/media/streaming/relay/ticket|stream
+/api/service/media/bwc|stream
+/api/service/media/bwc/address|stream
+/api/service/media/talk/voice/permission/status|stream
+/api/stream/getSwitchInfo|stream
+/api/service/rtc/call/|stream
+/api/cloud/list|cloud
+/api/cloud/files/get|cloud
+/api/cloud/get|cloud
+/api/cloud/cloudpay/authEntry|cloud
+/api/service/cloud/ticket|cloud
+/api/service/cloud/upload/url|cloud
+/api/service/cloudrecord/video/info/list|cloud
+/api/v3/open/cloud/v3/clouds/videoDetails|cloud
+/api/v3/open/cloud/v3/clouds/videos/delete|cloud
+/api/v3/open/cloud/v3/clouds/cloudServiceSwitch|cloud
+/api/alarm/list|alarm
+/api/alarm/getList|alarm
+/api/alarm/sdk/deleteAlarm|alarm
+/api/alarm/sdk/setRead|alarm
+/api/message/leaves/get|alarm
+/api/message/unreadCount|alarm
+/api/lapp/ddns/get|ddns
+/api/lapp/ddns/list|ddns
+/api/lapp/ddns/setDomain|ddns
+/api/lapp/ddns/share|ddns
+/api/lapp/ddns/mode/setAutomatic|ddns
+/api/lapp/trust/device/list|ddns
+/api/web/changePassword|web
+/api/web/notice|web
+/api/config/info|web
+/api/sdk/error/report|web`.trim().split("\n").map(l=>{const[p,c]=l.split("|");return{p,c,m:p.startsWith("/oauth")||p.includes("get")||p.includes("list")||p.includes("info")?"GET":"POST"}});
+const CATS={auth:"Identity",device:"Device",stream:"Streaming",cloud:"Cloud",alarm:"Alarm/Msg",ddns:"DDNS",web:"Web/Misc"};
+
+const STUN=[["9E","magic",1],["53","magic",1],["35","magic",1],["E9","magic",1],
+  ["01","ver",1],["00","ver",1],["00","ver",1],["00","ver",1],
+  ["··","BE(arg3)",2],["··","·",0],["··","·",0],["··","·",0],
+  ["··","msgType",2],["··","·",0],["··","·",0],["··","·",0],
+  ["··","BE(arg2)",2],["··","·",0],["··","bodyLen",2],["··","·",0]];
+
+const TREE=`<span class="goal">GOAL A · steal a user's session token</span>
+ ├─ <span class="node">A1 WebView MITM cert-accept (H-1)</span>  ·  on-path + victim taps "continue"  ·  <span class="fix">drop proceed(), pin cert</span>
+ ├─ <span class="node">A2 read token from logcat (M-1)</span>  ·  local log access + logging on  ·  <span class="fix">never log secrets</span>
+ └─ <span class="node">A3 hostile page over JS bridge (H-1+M-4)</span>  ·  A1 first  ·  <span class="fix">host allow-list</span>
+
+<span class="goal">GOAL B · decrypt a user's stored footage</span>
+ └─ <span class="node">B1 brute-force verify code (H-2)</span>  ·  possess the blob  ·  <span class="fix">random key, server-wrapped</span>
+
+<span class="goal">GOAL C · take over / recon LAN cameras</span>
+ ├─ <span class="node">C1 SADP enumerate</span>  ·  same L2 segment  ·  <span class="fix">VLAN, block 37020</span>
+ ├─ <span class="node">C2 SADP activate inactive device</span>  ·  factory state  ·  <span class="fix">activate before deploy</span>
+ └─ <span class="node">C3 SADP rewrite net params</span>  ·  same L2 segment  ·  <span class="fix">segment + monitor multicast</span>
+
+<span class="goal">GOAL D · native code-exec in the app</span>
+ └─ <span class="node">D1 System.load(soPath) hijack (M-2)</span>  ·  world-writable path to initLib  ·  <span class="fix">reject non-private paths</span>
+
+<span class="goal">GOAL E · intercept home Wi-Fi credentials</span>
+ └─ <span class="node">E1 sniff SmartConfig/SoundWave</span>  ·  radio/audio range at onboarding  ·  <span class="fix">prefer BLE/SoftAP + TLS</span>`;
+
+const STACK=[
+  ["App / UI","com.videogo.* · ezviz.ezopensdk — activities, WebView, push"],
+  ["Cloud REST","BaseAPI + RestfulUtils (OkHttp) → open.ys7.com / open.ezvizlife.com"],
+  ["Streaming","NativeApi → libezstreamclient · LAN-direct → STUN/CAS P2P → VTM relay · SRT + ECDH/SRTP"],
+  ["Discovery","com.hikvision.sadp → libsadp · multicast 239.255.255.250:37020"],
+  ["Device ctrl","com.hikvision.netsdk → libhcnetsdk + libHC* (Hikvision NetSDK)"],
+  ["Crypto","OpenSSL 3.0.17 + mbedTLS · KeyProtect white-box · AES media-at-rest"],
+];
+
+/* ---------- render ---------- */
+const $=(s,e=document)=>e.querySelector(s), ce=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e};
+
+$("#stats").innerHTML=STATS.map(([n,l])=>`<div class="stat"><div class="n tnum">${n}</div><div class="l">${l}</div></div>`).join("");
+
+$("#board").innerHTML=[...FINDINGS].sort((a,b)=>SEVORD[a.sev]-SEVORD[b.sev]).map(f=>`
+  <article class="find" style="--sevc:${SEVMETA[f.sev].c}">
+    <div class="top"><span class="pill">${SEVMETA[f.sev].l}</span><span class="cat mono" style="font-size:.68rem;color:var(--muted)">${f.cat}</span><span class="id">${f.id}</span></div>
+    <h3>${f.t}</h3><p>${f.d}</p><div class="where">${f.w}</div>
+  </article>`).join("");
+
+/* endpoints */
+const catCounts={};ENDPOINTS.forEach(e=>catCounts[e.c]=(catCounts[e.c]||0)+1);
+let activeCat="all";
+function renderFilters(){
+  const box=$("#filters");box.innerHTML="";
+  const mk=(k,lbl,n)=>{const b=ce("button","chip");b.textContent=`${lbl} ${n}`;b.setAttribute("aria-pressed",k===activeCat);
+    b.onclick=()=>{activeCat=k;renderFilters();renderEps()};return b};
+  box.appendChild(mk("all","All",ENDPOINTS.length));
+  Object.keys(CATS).forEach(k=>box.appendChild(mk(k,CATS[k],catCounts[k]||0)));
+}
+function renderEps(){
+  $("#eplist").innerHTML=ENDPOINTS.filter(e=>activeCat==="all"||e.c===activeCat).map(e=>`
+    <div class="ep"><span class="m ${e.m.toLowerCase()}">${e.m}</span><code>${e.p}</code><span class="cat">${CATS[e.c]}</span></div>`).join("");
+}
+renderFilters();renderEps();
+
+/* stun bytes */
+$("#stunBytes").innerHTML=STUN.map(([b,l,k])=>`<div class="byte ${k===1?'magic':k===2?'field':''}">${b}<small>${l}</small></div>`).join("");
+
+/* tree + stack */
+$("#treeBox").innerHTML=TREE;
+$("#stack").innerHTML=STACK.map(([n,d])=>`<div class="layer"><div class="ln">${n}</div><div class="ld">${d.replace(/·/g,'<span style="color:var(--faint)">·</span>')}</div></div>`).join("");
+
+/* ---------- MD5 (compact, for the oracle) ---------- */
+function md5(str){
+ function safeAdd(x,y){var l=(x&0xFFFF)+(y&0xFFFF);return(((x>>16)+(y>>16)+(l>>16))<<16)|(l&0xFFFF);}
+ function rol(n,c){return(n<<c)|(n>>>(32-c));}
+ function cmn(q,a,b,x,s,t){return safeAdd(rol(safeAdd(safeAdd(a,q),safeAdd(x,t)),s),b);}
+ function ff(a,b,c,d,x,s,t){return cmn((b&c)|(~b&d),a,b,x,s,t);}
+ function gg(a,b,c,d,x,s,t){return cmn((b&d)|(c&~d),a,b,x,s,t);}
+ function hh(a,b,c,d,x,s,t){return cmn(b^c^d,a,b,x,s,t);}
+ function ii(a,b,c,d,x,s,t){return cmn(c^(b|~d),a,b,x,s,t);}
+ function bytes(s){var n=s.length,b=[],i;for(i=0;i<n;i++)b[i>>2]|=(s.charCodeAt(i)&0xFF)<<((i%4)*8);return{b:b,n:n};}
+ function core(x,len){x[len>>5]|=0x80<<(len%32);x[(((len+64)>>>9)<<4)+14]=len;
+  var a=1732584193,b=-271733879,c=-1732584194,d=271733878,i,oa,ob,oc,od;
+  for(i=0;i<x.length;i+=16){oa=a;ob=b;oc=c;od=d;
+   a=ff(a,b,c,d,x[i]|0,7,-680876936);d=ff(d,a,b,c,x[i+1]|0,12,-389564586);c=ff(c,d,a,b,x[i+2]|0,17,606105819);b=ff(b,c,d,a,x[i+3]|0,22,-1044525330);
+   a=ff(a,b,c,d,x[i+4]|0,7,-176418897);d=ff(d,a,b,c,x[i+5]|0,12,1200080426);c=ff(c,d,a,b,x[i+6]|0,17,-1473231341);b=ff(b,c,d,a,x[i+7]|0,22,-45705983);
+   a=ff(a,b,c,d,x[i+8]|0,7,1770035416);d=ff(d,a,b,c,x[i+9]|0,12,-1958414417);c=ff(c,d,a,b,x[i+10]|0,17,-42063);b=ff(b,c,d,a,x[i+11]|0,22,-1990404162);
+   a=ff(a,b,c,d,x[i+12]|0,7,1804603682);d=ff(d,a,b,c,x[i+13]|0,12,-40341101);c=ff(c,d,a,b,x[i+14]|0,17,-1502002290);b=ff(b,c,d,a,x[i+15]|0,22,1236535329);
+   a=gg(a,b,c,d,x[i+1]|0,5,-165796510);d=gg(d,a,b,c,x[i+6]|0,9,-1069501632);c=gg(c,d,a,b,x[i+11]|0,14,643717713);b=gg(b,c,d,a,x[i]|0,20,-373897302);
+   a=gg(a,b,c,d,x[i+5]|0,5,-701558691);d=gg(d,a,b,c,x[i+10]|0,9,38016083);c=gg(c,d,a,b,x[i+15]|0,14,-660478335);b=gg(b,c,d,a,x[i+4]|0,20,-405537848);
+   a=gg(a,b,c,d,x[i+9]|0,5,568446438);d=gg(d,a,b,c,x[i+14]|0,9,-1019803690);c=gg(c,d,a,b,x[i+3]|0,14,-187363961);b=gg(b,c,d,a,x[i+8]|0,20,1163531501);
+   a=gg(a,b,c,d,x[i+13]|0,5,-1444681467);d=gg(d,a,b,c,x[i+2]|0,9,-51403784);c=gg(c,d,a,b,x[i+7]|0,14,1735328473);b=gg(b,c,d,a,x[i+12]|0,20,-1926607734);
+   a=hh(a,b,c,d,x[i+5]|0,4,-378558);d=hh(d,a,b,c,x[i+8]|0,11,-2022574463);c=hh(c,d,a,b,x[i+11]|0,16,1839030562);b=hh(b,c,d,a,x[i+14]|0,23,-35309556);
+   a=hh(a,b,c,d,x[i+1]|0,4,-1530992060);d=hh(d,a,b,c,x[i+4]|0,11,1272893353);c=hh(c,d,a,b,x[i+7]|0,16,-155497632);b=hh(b,c,d,a,x[i+10]|0,23,-1094730640);
+   a=hh(a,b,c,d,x[i+13]|0,4,681279174);d=hh(d,a,b,c,x[i]|0,11,-358537222);c=hh(c,d,a,b,x[i+3]|0,16,-722521979);b=hh(b,c,d,a,x[i+6]|0,23,76029189);
+   a=hh(a,b,c,d,x[i+9]|0,4,-640364487);d=hh(d,a,b,c,x[i+12]|0,11,-421815835);c=hh(c,d,a,b,x[i+15]|0,16,530742520);b=hh(b,c,d,a,x[i+2]|0,23,-995338651);
+   a=ii(a,b,c,d,x[i]|0,6,-198630844);d=ii(d,a,b,c,x[i+7]|0,10,1126891415);c=ii(c,d,a,b,x[i+14]|0,15,-1416354905);b=ii(b,c,d,a,x[i+5]|0,21,-57434055);
+   a=ii(a,b,c,d,x[i+12]|0,6,1700485571);d=ii(d,a,b,c,x[i+3]|0,10,-1894986606);c=ii(c,d,a,b,x[i+10]|0,15,-1051523);b=ii(b,c,d,a,x[i+1]|0,21,-2054922799);
+   a=ii(a,b,c,d,x[i+8]|0,6,1873313359);d=ii(d,a,b,c,x[i+15]|0,10,-30611744);c=ii(c,d,a,b,x[i+6]|0,15,-1560198380);b=ii(b,c,d,a,x[i+13]|0,21,1309151649);
+   a=ii(a,b,c,d,x[i+4]|0,6,-145523070);d=ii(d,a,b,c,x[i+11]|0,10,-1120210379);c=ii(c,d,a,b,x[i+2]|0,15,718787259);b=ii(b,c,d,a,x[i+9]|0,21,-343485551);
+   a=safeAdd(a,oa);b=safeAdd(b,ob);c=safeAdd(c,oc);d=safeAdd(d,od);}
+  return[a,b,c,d];}
+ function hex(bin){var h="0123456789abcdef",s="",i,by;for(i=0;i<bin.length*4;i++){by=(bin[i>>2]>>((i%4)*8))&0xFF;s+=h.charAt((by>>4)&0x0F)+h.charAt(by&0x0F);}return s;}
+ var o=bytes(str);return hex(core(o.b,o.n*8));
+}
+const oracle=code=>md5(md5(code));
+
+/* oracle + crack demo */
+const codeIn=$("#code"),tagOut=$("#tagOut");
+function showTag(){const c=(codeIn.value||"").toUpperCase();codeIn.value=c;
+  tagOut.innerHTML=`MD5(code)&nbsp;&nbsp;= <span class="tag">${md5(c)}</span><br>MD5² tag&nbsp;&nbsp;= <b class="tag">${oracle(c)}</b> <span style="color:var(--muted)">← stored in every blob</span>`;}
+codeIn.addEventListener("input",showTag);showTag();
+
+let cracking=false;
+const AZ="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+$("#stopBtn").onclick=()=>cracking=false;
+$("#crackBtn").onclick=()=>{
+  const target=oracle((codeIn.value||"").toUpperCase());
+  const prog=$("#prog"),out=$("#crackOut");prog.style.display="block";out.style.display="block";
+  cracking=true;const t0=performance.now();let tried=0;
+  const maxLen=4, total=Array.from({length:maxLen},(_,i)=>Math.pow(26,i+1)).reduce((a,b)=>a+b,0);
+  // odometer over lengths 1..maxLen
+  let len=1, idx=Array(maxLen).fill(0), curLen=1;
+  function candFor(n,L){let s="";for(let i=L-1;i>=0;i--){s=AZ[n%26]+s;n=Math.floor(n/26)}return s}
+  let counterByLen=1, nAtLen=0, spaceAtLen=Math.pow(26,1);
+  function step(){
+    if(!cracking){out.innerHTML=`<span class="miss">■ stopped</span> after ${tried.toLocaleString()} candidates`;return;}
+    const chunk=15000;
+    for(let k=0;k<chunk;k++){
+      if(nAtLen>=spaceAtLen){counterByLen++;nAtLen=0;spaceAtLen=Math.pow(26,counterByLen);if(counterByLen>maxLen){
+        out.innerHTML=`<span class="miss">■ not found</span> in 26¹–26⁴ (${tried.toLocaleString()} tried, ${((performance.now()-t0)/1000).toFixed(2)}s). Longer than 4 chars — that's what the GPU is for.`;prog.value=1;return;}}
+      const cand=candFor(nAtLen,counterByLen);nAtLen++;tried++;
+      if(oracle(cand)===target){
+        const dt=(performance.now()-t0)/1000, rate=Math.round(tried/dt);
+        out.innerHTML=`<span class="hit">◉ recovered code = ${cand}</span><br>${tried.toLocaleString()} candidates · ${dt.toFixed(2)}s · ${rate.toLocaleString()} H/s in JS<br><span style="color:var(--muted)">the MD5² oracle confirmed it with zero network — offline.</span>`;
+        prog.value=1;cracking=false;return;}
+    }
+    prog.value=Math.min(tried/total,1);
+    requestAnimationFrame(step);
+  }
+  out.innerHTML="searching…";requestAnimationFrame(step);
+};
+
+/* keyspace calc */
+const csel=$("#charset"),lsel=$("#len"),rsel=$("#rate"),lenv=$("#lenv"),calc=$("#calcOut");
+function fmtTime(s){if(s<1e-3)return (s*1e6).toFixed(1)+" µs";if(s<1)return (s*1e3).toFixed(1)+" ms";
+  if(s<60)return s.toFixed(2)+" s";if(s<3600)return (s/60).toFixed(1)+" min";if(s<86400)return(s/3600).toFixed(1)+" h";return(s/86400).toFixed(1)+" days";}
+function renderCalc(){
+  const cs=+csel.value,L=+lsel.value,rate=+rsel.value;lenv.textContent=L;
+  const space=Math.pow(cs,L), bits=Math.log2(space), t=space/rate;
+  calc.innerHTML=`<div class="kv"><span>keyspace</span><span>${cs}^${L} = ${space.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+    <div class="kv"><span>entropy</span><span>~2^${bits.toFixed(0)} · ${bits.toFixed(1)} bits</span></div>
+    <div class="kv"><span>work / candidate</span><span>2× MD5 (oracle)</span></div>
+    <div class="kv"><span>worst-case time</span><span style="color:${t<1?'var(--good)':t<60?'var(--med)':'var(--high)'}">${fmtTime(t)}</span></div>`;
+}
+[csel,lsel,rsel].forEach(el=>el.addEventListener("input",renderCalc));renderCalc();
+
+/* native chart (canvas) */
+function drawChart(){
+  const cv=$("#libChart");if(!cv)return;const dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth, rowH=Math.max(14,(cv.clientHeight-10)/LIBS.length);
+  cv.width=W*dpr;cv.height=cv.clientHeight*dpr;const g=cv.getContext("2d");g.scale(dpr,dpr);
+  g.clearRect(0,0,W,cv.clientHeight);
+  const cs=getComputedStyle(document.documentElement);
+  const muted=cs.getPropertyValue("--muted").trim(),border=cs.getPropertyValue("--border").trim();
+  const max=Math.max(...LIBS.map(l=>l[1])), labelW=Math.min(190,W*0.42), barMax=W-labelW-72;
+  g.font="11px ui-monospace,monospace";g.textBaseline="middle";
+  LIBS.forEach((l,i)=>{const y=i*rowH+rowH/2+4;
+    g.fillStyle=muted;g.textAlign="right";g.fillText(l[0].replace(/\.so$/,""),labelW-8,y);
+    const w=Math.max(2,(l[1]/max)*barMax);const col=GROUPS[l[2]][1];
+    g.fillStyle=col+"cc";const bx=labelW,by=i*rowH+3,bh=rowH-4;
+    g.beginPath();g.roundRect?g.roundRect(bx,by,w,bh,3):g.rect(bx,by,w,bh);g.fill();
+    g.fillStyle=muted;g.textAlign="left";g.fillText((l[1]/1048576).toFixed(1)+" MB",bx+w+8,y);});
+}
+$("#legend").innerHTML=Object.keys(GROUPS).map(k=>`<span><i style="background:${GROUPS[k][1]}"></i>${GROUPS[k][0]}</span>`).join("");
+drawChart();window.addEventListener("resize",()=>{clearTimeout(window._rt);window._rt=setTimeout(drawChart,150)});
+
+/* theme toggle */
+const root=document.documentElement, tb=$("#themeBtn");
+tb.onclick=()=>{const cur=root.getAttribute("data-theme")||
+  (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+  root.setAttribute("data-theme",cur==="dark"?"light":"dark");drawChart();};
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",drawChart);
+</script>
+
+</body>
+</html>
