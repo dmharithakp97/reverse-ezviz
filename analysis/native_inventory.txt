@@ -1,0 +1,38 @@
+# Native library inventory (arm64-v8a) — ezviz-sdk 5.27.3
+
+LIB                              SIZE  ROLE
+libEZAudioSDK.so              2316584  stripped
+libFormatConversion.so        3846416  stripped
+libHCAlarm.so                 1050472  stripped
+libHCCore.so                  2693800  stripped
+libHCCoreDevCfg.so            1181568  stripped
+libHCDisplay.so                984936  stripped
+libHCGeneralCfgMgr.so         1705832  stripped
+libHCIndustry.so              1312616  stripped
+libHCPlayBack.so               788328  stripped
+libHCPreview.so                722792  stripped
+libHCVoiceTalk.so              657256  stripped
+libHwCodecer.so                431248  stripped
+libMNN.so                     1980072  stripped
+libMNN_CL.so                  1160088  stripped
+libNPClient.so                1082848  stripped
+libNPQos.so                   2533976  stripped
+libPlayCtrl.so                7477848  stripped
+libSystemTransform.so         6524504  not stripped
+libUdpClient.so                230728  stripped
+libcrypto.so                  5266912  stripped
+libencryptprotect.so             9536  stripped
+libezstreamclient.so          7802432  stripped
+libezutils.so                  646912  stripped
+libezwatch.so                 3665912  stripped
+libhcnetsdk.so                1509240  stripped
+libhpr.so                     1132912  stripped
+libjnidispatch.so              165992  stripped
+libmbedcrypto.so               394272  stripped
+libmbedtls.so                  118888  stripped
+libmbedx509.so                 119392  stripped
+libsadp.so                    2234376  stripped
+libsrt.so                     1069000  stripped
+libssl.so                      865376  stripped
+libstunClient.so              6873584  not stripped
+libysvqe_mobile.so             744896  stripped

@@ -1,0 +1,85 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package com.videogo.constant;
+
+public class Constant {
+    public static final String IS_UPDATE_TASK = "is_update_task";
+    public static final int ANDROID_TYPE = 13;
+    public static final String[] HOST_NAMES = new String[]{"ezvizlife.com", "ys7.com", "shipin7.com", "ezvizru.com"};
+    public static final int FIRST_USED = 1;
+    public static final int FIRST_USED_MYCAMERA = 2;
+    public static final int FIRST_USED_SCAN = 4;
+    public static final int FIRST_USED_TAB_MESSAGE = 7;
+    public static final int USER_NAME_USABLE = 3;
+    public static final int ACCOUNT_CONTACT = 10;
+    public static final int ACCOUNT_EMAIL = 17;
+    public static final int ACCOUNT_PHONE = 11;
+    public static final int ACCOUNT_FIXPHONE = 12;
+    public static final int ACCOUNT_COMPANY_ADDR = 13;
+    public static final int MDF_FAMILY = 14;
+    public static final int MDF_COMPANY = 15;
+    public static final int ACCOUNT_NICKNAME = 21;
+    public static final int REG_FAMILY = 0;
+    public static final int REG_COMPANY = 1;
+    public static final int USER_NAME_MIN_LENGTH = 4;
+    public static final int USER_NAME_MAX_LENGTH = 20;
+    public static final int PSW_MIN_LENGTH = 6;
+    public static final int PSW_MAX_LENGTH = 16;
+    public static final int PHONE_MIN_LENGTH = 11;
+    public static final int PHONE_MAX_LENGTH = 20;
+    public static final int SERIAL_NO_LENGTH = 9;
+    public static final int VERIFY_CODE_LENGTH = 4;
+    public static final int ACCOUNT_CONTACT_MIN_LENGTH = 2;
+    public static final int ACCOUNT_CONTACT_MAX_LENGTH = 50;
+    public static final int ACCOUNT_COMPANY_ADDR_MAX_LENGTH = 200;
+    public static final float LIVE_VIEW_RATIO = 0.5625f;
+    public static final float LIVE_MULTI_VIEW_RATIO = 1.1251f;
+    public static int POOL_SIZE = 3;
+    public static int THUMBNAILS_SIZE = 4;
+    public static int CPU_NUMS = Runtime.getRuntime().availableProcessors();
+    public static final int IO_BUFFER_SIZE = 4096;
+    public static final long MILLISSECOND_ONE_DAY = 86400000L;
+    public static final long GB = 0x40000000L;
+    public static final long MB = 0x100000L;
+    public static final long KB = 1024L;
+    public static final int REFRESH_TIME_INTERVAL = 300000;
+    public static final String SNAP_URL_AND_PORT = "http://snap.ys7.com:99";
+    public static final String SNAP_ADDR = "snap.ys7.com";
+    public static final int SNAP_PORT = 99;
+    public static final String NOTIFIER_ALARM_LIST_CHANGE_ACTION = "com.vedeogo.action.NOTIFIER_ALARM_LIST_CHANGE_ACTION";
+    public static final String MESSAGE_UNREAD_COUNT_CHANGE_ACTION = "com.vedeogo.action.MESSAGE_UNREAD_COUNT_CHANGE_ACTION";
+    public static final String UPDATE_DOT_BROADCAST = "com.vedeogo.action.UPDATE_DOT_BROADCAST_ACTION";
+    public static final String BROADCAST_VERSION_UPDATE = "com.vedeogo.action.VERSION_UPDATE_BROADCAST_ACTION";
+    public static final String SEND_BROARDCAST_CAMERALIST = "com.vedeogo.action.SEND_BROARDCAST_CAMERALIST_ACTION";
+    public static final String LEAVE_MESSAGE_DISPLAY_ACTION = "com.vedeogo.action.LEAVE_MESSAGE_DISPLAY_ACTION";
+    public static final String ALARM_MESSAGE_DISPLAY_ACTION = "com.vedeogo.action.ALARM_MESSAGE_DISPLAY_ACTION";
+    public static final String ALARM_MESSAGE_DISPLAY_PASSWORD_UPDATE = "com.vedeogo.action.ALARM_MESSAGE_DISPLAY_PASSWORD_UPDATE";
+    public static final String LEAVE_MESSAGE_DELETE_ACTION = "com.vedeogo.action.LEAVE_MESSAGE_DELETE_ACTION";
+    public static final String LEAVE_MESSAGE_READ_ACTION = "com.vedeogo.action.LEAVE_MESSAGE_READ_ACTION";
+    public static final String BROADCAST_NETWORK_CHANGE_ACTION = "com.vedeogo.action.BROADCAST_NETWORK_CHANGE_ACTION";
+    public static final String USER_AVATOR_DOWN_ACTION = "com.vedeogo.action.USER_AVATOR_DOWN_ACTION";
+    public static final String MULTI_CAMERA_LIST_UPDATE_ACTION = "com.vedeogo.action.MULTI_CAMERA_LIST_UPDATE_ACTION";
+    public static final String VIDEOGO_PREFERENCE_NAME = "videoGo";
+    public static final String DEV_INFO_PREFERENCE_NAME = "devinfo";
+    public static final String DEV_INFO_SAFEMODE_NAME = "devinfosafemode";
+    public static final String DEV_VERFYCODE_PREFERENCE_NAME = "verfycode";
+    public static final String OAUTH_SUCCESS_ACTION = "com.videogo.action.OAUTH_SUCCESS_ACTION";
+    public static final String ADD_DEVICE_SUCCESS_ACTION = "com.videogo.action.ADD_DEVICE_SUCCESS_ACTION";
+    public static final String RESP_URL_PREFIX = "shipin7://";
+    public static final int SIGNATURE_HASH_CODE = 350072125;
+    public static final String RESP_URL_WXPAY = "shipin7://wxpay?p=";
+    public static final int SMS_VERIFY_LOGIN = 1;
+    public static final int SMS_VERIFY_HARDWARE = 2;
+    public static final long RELOAD_INTERVAL = 300000L;
+    public static final long NOTICE_RELOAD_INTERVAL = 900000L;
+    public static final int OPER_NONE = 0;
+    public static final int OPER_ADD = 1;
+    public static final int OPER_MOD = 2;
+    public static final int OPER_DEL = 3;
+    public static final int MESSAGE_LIST = 1;
+    public static final int MESSAGE_INNER_PUSH = 2;
+    public static final int MESSAGE_OUTER_PUSH = 3;
+    public static final float MAX_SCALE = 4.0f;
+}
+

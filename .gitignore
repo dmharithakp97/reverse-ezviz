@@ -1,0 +1,7 @@
+# Large / re-downloadable binaries (regenerate with ./fetch.sh)
+tools/*.jar
+sdk/*.aar
+sdk/*.pom
+apk/
+work/
+*.so
