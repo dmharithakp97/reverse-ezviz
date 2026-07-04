@@ -9,3 +9,8 @@ work/
 # Python cache
 __pycache__/
 *.pyc
+
+# Consumer-APK analysis outputs (user-supplied binary; regenerable)
+apk_work/
+apk_analysis/
+tools/dex2jar-*/

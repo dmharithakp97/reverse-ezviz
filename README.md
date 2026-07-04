@@ -43,7 +43,18 @@ analysis/              Curated artifacts:
 src/java/              Decompiled EZVIZ-specific Java (main SDK + sadp + EZStreamClient + configwifi + KeyProtect)
 ```
 
-## Reproduce
+## Consumer APK (com.ezviz)
+The Play Store app is **not** included: the Play Store has no headless download path and every APK mirror is
+blocked by this environment's egress policy, so it can't be fetched here. Supply it yourself from your own
+device and the full pipeline runs on it:
+```bash
+adb shell pm path com.ezviz          # -> package:/data/app/.../base.apk
+adb pull <that path> apk/ezviz.apk
+./analyze_apk.sh apk/ezviz.apk       # apktool + dex2jar + CFR + native + attack-surface/endpoint/secret scans
+```
+Outputs land in `apk_analysis/` (git-ignored — it's your binary). Compare against the SDK findings here.
+
+## Reproduce (SDK analysis)
 ```bash
 ./fetch.sh && ./analyze.sh
 ```
