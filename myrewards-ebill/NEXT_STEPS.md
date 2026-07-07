@@ -11,7 +11,14 @@ e-Bill, a Laravel app you administer). It was reconstructed entirely from **one 
 customer phone number.
 
 Read in this order: `README.md` → `REPORT.md` → `SECURITY_FINDINGS.md` →
-`reconstructed/EbillController.store.php`. Source evidence: `evidence/error_page_debug_leak.png`.
+`reconstructed/EbillController.store.php` → `MULTI_TENANT_EXPOSURE.md`. Source evidence:
+`evidence/error_page_debug_leak.png`.
+
+**Hard-mode / fleet question (other subdomains + branch codes):** see `MULTI_TENANT_EXPOSURE.md`.
+Short version: the code-level issues (F-3/F-4/F-5) are shared by every branch because it's one
+codebase; the debug/RCE exposure (F-1/F-2) must be confirmed per branch. Discovery + exposure mapping
+can't run from the analysis sandbox (DNS/CT logs are egress-blocked) — run `toolkit/enum_subdomains.sh`
+then `toolkit/sweep.sh` from your laptop and hand back `out/all_subdomains.txt` + `out/exposure_matrix.csv`.
 
 ## State as of this handoff
 
