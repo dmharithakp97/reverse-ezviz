@@ -11,8 +11,15 @@ e-Bill, a Laravel app you administer). It was reconstructed entirely from **one 
 customer phone number.
 
 Read in this order: `README.md` → `REPORT.md` → `SECURITY_FINDINGS.md` →
-`reconstructed/EbillController.store.php` → `MULTI_TENANT_EXPOSURE.md`. Source evidence:
-`evidence/error_page_debug_leak.png`.
+`reconstructed/EbillController.store.php` → `MULTI_TENANT_EXPOSURE.md` → `DATABASE_ANALYSIS.md`.
+Source evidence: `evidence/error_page_debug_leak.png`.
+
+**Database deep-dive:** `DATABASE_ANALYSIS.md` — MySQL/MariaDB fingerprint, reconstructed
+`CRM_Customer` schema, and DB-layer findings: DB-1 int comparison on a phone column (type juggling),
+DB-2 reversible OTP at rest, DB-3 schema/code drift, DB-4 shared-CRM blast radius, DB-5 debug leaks
+DB creds on next connection error, DB-6 no row-level authz + `select *` over-fetch. To confirm the
+[V] items, run **`toolkit/db_audit.sql`** (read-only) against the branch DB and paste the output back,
+or hand over `SHOW CREATE TABLE CRM_Customer` + the model's `$table/$fillable/$casts`.
 
 **Hard-mode / fleet question (other subdomains + branch codes):** see `MULTI_TENANT_EXPOSURE.md`.
 Short version: the code-level issues (F-3/F-4/F-5) are shared by every branch because it's one
